@@ -67,8 +67,6 @@ jobs:
         with:
           images: |
             ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-            wang-zhichuang/${{ env.GITHUB_REPOSITORY_NAME }}
-
 
       - name: Build and push Docker image
         id: build-and-push 
