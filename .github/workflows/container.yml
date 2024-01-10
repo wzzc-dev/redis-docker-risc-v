@@ -16,16 +16,7 @@ name: build and push container images
 
 env:
   REGISTRY: ghcr.io
-  # EULIX_REGISTRY: hub.eulix.xyz
-  # HUAWEICLOUD_REGISTRY_SH: swr.cn-east-3.myhuaweicloud.com
-  # HUAWEICLOUD_REGISTRY_BJ: swr.cn-north-4.myhuaweicloud.com
-  # HUAWEICLOUD_REGISTRY_GZ: swr.cn-south-1.myhuaweicloud.com
-  # HUAWEICLOUD_REGISTRY_HK: swr.ap-southeast-1.myhuaweicloud.com
-  # HUAWEICLOUD_REGISTRY_SG: swr.ap-southeast-3.myhuaweicloud.com
-  # HUAWEICLOUD_REGISTRY_AF: swr.af-south-1.myhuaweicloud.com
-  # HUAWEICLOUD_REGISTRY_LA: swr.la-north-2.myhuaweicloud.com
   IMAGE_NAME: ${{ github.repository }}
-  JAVA_VERSION: '17'
 
 on:
   push:
@@ -69,14 +60,7 @@ jobs:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Log into registry Docker Hub
-        if: github.event_name != 'pull_request'
-        uses: docker/login-action@v2
-        with:
-          username: ${{ secrets.DOCKER_HUB_REGISTRY_USERNAME }}
-          password: ${{ secrets.DOCKER_HUB_REGISTRY_PASSWORD }}
-
+          
       - name: Extract Docker metadata
         id: meta
         uses: docker/metadata-action@v2
