@@ -143,15 +143,22 @@ jobs:
         with:
           images: |
             ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-            # ${{ env.EULIX_REGISTRY }}/${{ env.IMAGE_NAME }}
-            # aospace/${{ env.GITHUB_REPOSITORY_NAME }}
-            # ${{ env.HUAWEICLOUD_REGISTRY_SH }}/${{ env.IMAGE_NAME }}
-            # ${{ env.HUAWEICLOUD_REGISTRY_BJ }}/${{ env.IMAGE_NAME }}
-            # ${{ env.HUAWEICLOUD_REGISTRY_GZ }}/${{ env.IMAGE_NAME }}
-            # ${{ env.HUAWEICLOUD_REGISTRY_HK }}/${{ env.IMAGE_NAME }}
-            # ${{ env.HUAWEICLOUD_REGISTRY_SG }}/${{ env.IMAGE_NAME }}
-            # ${{ env.HUAWEICLOUD_REGISTRY_AF }}/${{ env.IMAGE_NAME }}
-            # ${{ env.HUAWEICLOUD_REGISTRY_LA }}/${{ env.IMAGE_NAME }}
+
+      # - name: Extract Docker metadata
+      #   id: meta
+      #   uses: docker/metadata-action@v2
+      #   with:
+      #     images: |
+      #       ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+      #       ${{ env.EULIX_REGISTRY }}/${{ env.IMAGE_NAME }}
+      #       aospace/${{ env.GITHUB_REPOSITORY_NAME }}
+      #       ${{ env.HUAWEICLOUD_REGISTRY_SH }}/${{ env.IMAGE_NAME }}
+      #       ${{ env.HUAWEICLOUD_REGISTRY_BJ }}/${{ env.IMAGE_NAME }}
+      #       ${{ env.HUAWEICLOUD_REGISTRY_GZ }}/${{ env.IMAGE_NAME }}
+      #       ${{ env.HUAWEICLOUD_REGISTRY_HK }}/${{ env.IMAGE_NAME }}
+      #       ${{ env.HUAWEICLOUD_REGISTRY_SG }}/${{ env.IMAGE_NAME }}
+      #       ${{ env.HUAWEICLOUD_REGISTRY_AF }}/${{ env.IMAGE_NAME }}
+      #       ${{ env.HUAWEICLOUD_REGISTRY_LA }}/${{ env.IMAGE_NAME }}      
 
       - name: Build and push Docker image
         id: build-and-push 
