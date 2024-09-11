@@ -134,6 +134,7 @@ RUN git clone https://github.com/llvm/llvm-project.git && \
     git checkout ${LLVM_VERSION} && \
     mkdir build && cd build && \
     cmake -G Ninja ../llvm \
+    -DLLVM_ENABLE_PROJECTS="clang;lld;lldb;openmp"\
     -DLLVM_ENABLE_PROJECTS="mlir" \
     -DLLVM_INSTALL_UTILS=ON \
     -DLLVM_TARGETS_TO_BUILD="" \
