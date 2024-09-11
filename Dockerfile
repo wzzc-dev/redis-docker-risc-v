@@ -49,7 +49,7 @@ ENV CMAKE_VERSION 3.25.3
 
 RUN apt-get update && apt-get install -y --no-install-recommends libssl-dev \
     && git clone --branch v${CMAKE_VERSION} https://github.com/Kitware/CMake.git \
-    && cd CMake && ./bootstrap && make && make install \
+    && cd CMake && ./bootstrap && make -j$(nproc) && make install \
     && cmake --version
 
 ENV CATCH3_VERSION 3.4.0
@@ -57,7 +57,7 @@ ENV CATCH3_VERSION 3.4.0
 RUN git clone --branch v${CATCH3_VERSION} https://github.com/catchorg/Catch2.git && \
     cd Catch2 && \
     cmake -Bbuild -H. -DBUILD_TESTING=OFF -DCMAKE_INSTALL_PREFIX=/usr/local && \
-    cmake --build build/ --target install && \
+    cmake --build build/ --target install -j$(nproc) && \
     rm -rf /Catch2 /tmp/* ~/.cache/*
 
 ARG FLATBUFFERS_VERSION="e2be0c0b0605b38e11a8710a8bae38d7f86a7679"
@@ -65,8 +65,28 @@ RUN git clone https://github.com/google/flatbuffers.git &&\
     cd flatbuffers && git checkout ${FLATBUFFERS_VERSION} && \
     mkdir -p build && cd build && \
     cmake .. -DCMAKE_INSTALL_PREFIX=/usr/local && \
-    cmake --build . --target install && \
+    cmake --build . --target install -j$(nproc) && \
     cd / && rm -rf flatbuffers /tmp/* ~/.cache/*
+
+ARG LLVM_VERSION="c67e443895d5b922d1ffc282d23ca31f7161d4fb"
+RUN git clone https://github.com/llvm/llvm-project.git && \
+    cd llvm-project/ && \
+    git checkout ${LLVM_VERSION} && \
+    mkdir build && cd build && \
+    cmake -G Ninja ../llvm \
+    -DLLVM_ENABLE_PROJECTS="clang;lld;lldb;openmp"\
+    -DLLVM_ENABLE_PROJECTS="mlir" \
+    -DLLVM_INSTALL_UTILS=ON \
+    -DLLVM_TARGETS_TO_BUILD="" \
+    -DLLVM_ENABLE_ASSERTIONS=ON \
+    -DMLIR_INCLUDE_TESTS=OFF \
+    -DLLVM_INSTALL_GTEST=ON \
+    -DMLIR_ENABLE_BINDINGS_PYTHON=ON \
+    -DCMAKE_BUILD_TYPE=Release \
+    -DCMAKE_INSTALL_PREFIX=/usr/local \
+    -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DLLVM_ENABLE_LLD=ON && \
+    cmake --build . --target install -j$(nproc) && \
+    cd / && rm -rf llvm-project /tmp/* ~/.cache/*
 
 ARG ONEDNN_VERSION="5aabea153825347afa92a2d9f69dd893246bea45"
 RUN git clone https://github.com/oneapi-src/oneDNN.git && \
@@ -77,7 +97,7 @@ RUN git clone https://github.com/oneapi-src/oneDNN.git && \
     -DDNNL_BUILD_TESTS=OFF \
     -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ \
     -DCMAKE_INSTALL_PREFIX=/usr/local && \
-    cmake --build . --target install && \
+    cmake --build . --target install -j$(nproc) && \
     cd / && rm -rf oneDNN /tmp/* ~/.cache/*
 
 # MLIR&Caffe python dependency
@@ -114,7 +134,8 @@ RUN git clone https://github.com/sophgo/caffe.git && \
     -DCMAKE_CXX_FLAGS=-std=gnu++11 \
     -Dpython_version="3" \
     -DCMAKE_INSTALL_PREFIX=caffe && \
-    cmake --build . --target install
+    cmake --build . --target install -j$(nproc)
+    
 RUN cd /root/caffe/python/caffe && \
     rm _caffe.so && \
     cp -f /root/caffe/build/lib/_caffe.so . && \
@@ -125,26 +146,6 @@ RUN cd /root/caffe/python/caffe && \
 # stage 2: MLIR
 # ********************************************************************************
 FROM base as mlir_builder
-
-ARG LLVM_VERSION="c67e443895d5b922d1ffc282d23ca31f7161d4fb"
-RUN git clone https://github.com/llvm/llvm-project.git && \
-    cd llvm-project/ && \
-    git checkout ${LLVM_VERSION} && \
-    mkdir build && cd build && \
-    cmake -G Ninja ../llvm \
-    -DLLVM_ENABLE_PROJECTS="clang;lld;lldb;openmp"\
-    -DLLVM_ENABLE_PROJECTS="mlir" \
-    -DLLVM_INSTALL_UTILS=ON \
-    -DLLVM_TARGETS_TO_BUILD="" \
-    -DLLVM_ENABLE_ASSERTIONS=ON \
-    -DMLIR_INCLUDE_TESTS=OFF \
-    -DLLVM_INSTALL_GTEST=ON \
-    -DMLIR_ENABLE_BINDINGS_PYTHON=ON \
-    -DCMAKE_BUILD_TYPE=Release \
-    -DCMAKE_INSTALL_PREFIX=/usr/local \
-    -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DLLVM_ENABLE_LLD=ON && \
-    cmake --build . --target install && \
-    cd / && rm -rf llvm-project /tmp/* ~/.cache/*
 
 RUN TZ=Asia/Shanghai \
     && ln -snf /usr/share/zoneinfo/$TZ /etc/localtime \
