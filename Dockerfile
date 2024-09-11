@@ -47,22 +47,20 @@ RUN update-alternatives --install /usr/bin/python python /usr/bin/python3 10
 
 ENV CMAKE_VERSION 3.25.3
 
-# LLVM
-git clone https://github.com/llvm/llvm-project.git riscv-llvm
-#git clone https://github.com/sifive/riscv-llvm
-pushd riscv-llvm
-ln -s ../../clang llvm/tools || true
-mkdir _build
-cd _build
-cmake -G Ninja -DCMAKE_BUILD_TYPE="Release" \
-  -DBUILD_SHARED_LIBS=True -DLLVM_USE_SPLIT_DWARF=True \
-  -DCMAKE_INSTALL_PREFIX="../../_install" \
-  -DLLVM_OPTIMIZED_TABLEGEN=True -DLLVM_BUILD_TESTS=False \
-  -DDEFAULT_SYSROOT="../../_install/riscv64-unknown-elf" \
-  -DLLVM_DEFAULT_TARGET_TRIPLE="riscv64-unknown-elf" \
-  -DLLVM_TARGETS_TO_BUILD="RISCV" \
-  ../llvm
-cmake --build . --target install
+RUN git clone https://github.com/llvm/llvm-project.git riscv-llvm &&\
+    pushd riscv-llvm &&\
+    ln -s ../../clang llvm/tools || true &&\
+    mkdir _build \
+    cd _build &&\
+    cmake -G Ninja -DCMAKE_BUILD_TYPE="Release" \
+      -DBUILD_SHARED_LIBS=True -DLLVM_USE_SPLIT_DWARF=True \
+      -DCMAKE_INSTALL_PREFIX="../../_install" \
+      -DLLVM_OPTIMIZED_TABLEGEN=True -DLLVM_BUILD_TESTS=False \
+      -DDEFAULT_SYSROOT="../../_install/riscv64-unknown-elf" \
+      -DLLVM_DEFAULT_TARGET_TRIPLE="riscv64-unknown-elf" \
+      -DLLVM_TARGETS_TO_BUILD="RISCV" \
+      ../llvm &&\
+    cmake --build . --target install
 
 RUN wget https://github.com/Kitware/CMake/releases/download/v$CMAKE_VERSION/cmake-$CMAKE_VERSION-linux-x86_64.sh \
     --no-check-certificate \
