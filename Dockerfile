@@ -52,7 +52,8 @@ RUN wget https://github.com/Kitware/CMake/releases/download/v$CMAKE_VERSION/cmak
     -q -O /tmp/cmake-install.sh \
     && chmod u+x /tmp/cmake-install.sh \
     && /tmp/cmake-install.sh --skip-license --prefix=/usr/local \
-    && rm /tmp/cmake-install.sh
+    && rm /tmp/cmake-install.sh \
+     && cmake --version
 
 ENV CATCH3_VERSION 3.4.0
 
