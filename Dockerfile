@@ -69,7 +69,13 @@ RUN git clone https://github.com/google/flatbuffers.git &&\
     cd / && rm -rf flatbuffers /tmp/* ~/.cache/*
 
 # MLIR&Caffe python dependency
-RUN pip install pybind11-global==2.11.1 numpy==1.24.3 PyYAML && \
+RUN pip install PyYAML && \
+    rm -rf ~/.cache/pip/*
+    
+RUN pip install pybind11-global==2.11.1 && \
+    rm -rf ~/.cache/pip/*
+
+RUN pip install numpy==1.24.3 && \
     rm -rf ~/.cache/pip/*
     
 ARG LLVM_VERSION="c67e443895d5b922d1ffc282d23ca31f7161d4fb"
