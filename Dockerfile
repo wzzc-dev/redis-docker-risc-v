@@ -12,6 +12,7 @@ RUN apt-get update && apt-get install -y \
     wget \
     python3 \
     python3-pip \
+    python3.10-venv \
     vim \
     && rm -rf /var/lib/apt/lists/*
 
@@ -20,6 +21,8 @@ WORKDIR /workspace
 
 # 创建虚拟环境
 RUN python3 -m venv --system-site-packages /root/venv
+
+RUN pip install expecttest types-dataclasses lark optree hypothesis psutil pyyaml requests sympy filelock networkx jinja2 fsspec packaging numpy
 
 # 激活虚拟环境
 ENV PATH="/root/venv/bin:$PATH"
