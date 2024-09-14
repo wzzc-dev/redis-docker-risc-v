@@ -1,195 +1,65 @@
+# 使用Ubuntu 22.04作为基础镜像
 FROM ubuntu:22.04 as base
-ARG DEBIAN_FRONTEND="noninteractive"
-ENV TZ=Asia/Shanghai
 
-# ********************************************************************************
-#
-# stage 0: base
-# ********************************************************************************
+# 设置环境变量
+ENV DEBIAN_FRONTEND=noninteractive
 
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    apt-transport-https ca-certificates build-essential \
-    git vim sudo \
-    # python
-    python3-dev \
-    python3-venv \
+# 更新系统包并安装必要的工具和依赖
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    cmake \
+    git \
+    wget \
+    python3 \
     python3-pip \
-    virtualenv \
-    swig \
-    tzdata \
-    # tablgen
-    libncurses5-dev libncurses5 \
-    # tools
-    ninja-build \
-    parallel \
-    curl wget \
-    unzip \
-    graphviz \
-    bsdmainutils \
-    gdb \
-    ccache \
-    git-lfs \
-    clang clang-format \
-    # for opencv
-    libgl1 \
-    libnuma1 libatlas-base-dev \
-    # ssh
-    openssh-server openssh-client \
-    # for document
-    texlive-xetex \
-    # fix bug: https://bugs.archlinux.org/task/67856
-    texlive-lang-chinese texlive-fonts-recommended && \
-    # clenup
-    apt-get clean && \
-    rm -rf /var/lib/apt/lists/*
+    vim \
+    && rm -rf /var/lib/apt/lists/*
 
-RUN update-alternatives --install /usr/bin/python python /usr/bin/python3 10
-
-ENV CMAKE_VERSION 3.25.3
-
-RUN apt-get update && apt-get install -y --no-install-recommends libssl-dev \
-    && git clone --branch v${CMAKE_VERSION} https://github.com/Kitware/CMake.git \
-    && cd CMake && ./bootstrap && make -j$(nproc) && make install \
-    && cmake --version
-
-ENV CATCH3_VERSION 3.4.0
-
-RUN git clone --branch v${CATCH3_VERSION} https://github.com/catchorg/Catch2.git && \
-    cd Catch2 && \
-    cmake -Bbuild -H. -DBUILD_TESTING=OFF -DCMAKE_INSTALL_PREFIX=/usr/local && \
-    cmake --build build/ --target install -j$(nproc) && \
-    rm -rf /Catch2 /tmp/* ~/.cache/*
-
-ARG FLATBUFFERS_VERSION="e2be0c0b0605b38e11a8710a8bae38d7f86a7679"
-RUN git clone https://github.com/google/flatbuffers.git &&\
-    cd flatbuffers && git checkout ${FLATBUFFERS_VERSION} && \
-    mkdir -p build && cd build && \
-    cmake .. -DCMAKE_INSTALL_PREFIX=/usr/local && \
-    cmake --build . --target install -j$(nproc) && \
-    cd / && rm -rf flatbuffers /tmp/* ~/.cache/*
-
-# MLIR&Caffe python dependency
-RUN pip install PyYAML && \
-    rm -rf ~/.cache/pip/*
-    
-RUN pip install pybind11-global==2.11.1 && \
-    rm -rf ~/.cache/pip/*
-
-RUN pip install numpy==1.24.3 && \
-    rm -rf ~/.cache/pip/*
-    
-ARG LLVM_VERSION="c67e443895d5b922d1ffc282d23ca31f7161d4fb"
-RUN git clone https://github.com/llvm/llvm-project.git && \
-    cd llvm-project/ && \
-    git checkout ${LLVM_VERSION} && \
-    mkdir build && cd build && \
-    cmake -G Ninja ../llvm \
-    -DLLVM_ENABLE_PROJECTS="clang;lld;lldb;openmp"\
-    -DLLVM_ENABLE_PROJECTS="mlir" \
-    -DLLVM_INSTALL_UTILS=ON \
-    -DLLVM_TARGETS_TO_BUILD="" \
-    -DLLVM_ENABLE_ASSERTIONS=ON \
-    -DMLIR_INCLUDE_TESTS=OFF \
-    -DLLVM_INSTALL_GTEST=ON \
-    -DMLIR_ENABLE_BINDINGS_PYTHON=ON \
-    -DCMAKE_BUILD_TYPE=Release \
-    -DCMAKE_INSTALL_PREFIX=/usr/local \
-    -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DLLVM_ENABLE_LLD=ON && \
-    cmake --build . --target install -j$(nproc) && \
-    cd / && rm -rf llvm-project /tmp/* ~/.cache/*
-
-ARG ONEDNN_VERSION="5aabea153825347afa92a2d9f69dd893246bea45"
-RUN git clone https://github.com/oneapi-src/oneDNN.git && \
-    cd oneDNN && git checkout ${ONEDNN_VERSION} && \
-    mkdir -p build && cd build && \
-    cmake -G Ninja .. \
-    -DDNNL_CPU_RUNTIME=OMP \
-    -DDNNL_BUILD_TESTS=OFF \
-    -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ \
-    -DCMAKE_INSTALL_PREFIX=/usr/local && \
-    cmake --build . --target install -j$(nproc) && \
-    cd / && rm -rf oneDNN /tmp/* ~/.cache/*
-
-
-
-# ********************************************************************************
-#
-# stage 1: caffe
-# ********************************************************************************
-
-FROM base as caffe_builder
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    libboost-all-dev \
-    libgflags-dev \
-    libgoogle-glog-dev \
-    libhdf5-serial-dev \
-    libleveldb-dev \
-    liblmdb-dev \
-    libprotobuf-dev \
-    libsnappy-dev \
-    protobuf-compiler \
-    libopenblas-dev
-# RUN pip install numpy
-WORKDIR /root
-
-ARG CAFFE_VERSION="6b665ea602f602502121ca3dc84f58e801fcaa13"
-RUN git clone https://github.com/sophgo/caffe.git && \
-    cd caffe && git checkout ${CAFFE_VERSION} && \
-    mkdir -p build && cd build && \
-    cmake -G Ninja .. \
-    -DCPU_ONLY=ON -DUSE_OPENCV=OFF \
-    -DBLAS=open -DUSE_OPENMP=TRUE \
-    -DCMAKE_CXX_FLAGS=-std=gnu++11 \
-    -Dpython_version="3" \
-    -DCMAKE_INSTALL_PREFIX=caffe && \
-    cmake --build . --target install -j$(nproc)
-    
-RUN cd /root/caffe/python/caffe && \
-    rm _caffe.so && \
-    cp -f /root/caffe/build/lib/_caffe.so . && \
-    cp -rf /root/caffe/src/caffe/proto .
-
-# ********************************************************************************
-#
-# stage 2: MLIR
-# ********************************************************************************
-FROM base as mlir_builder
-
-RUN TZ=Asia/Shanghai \
-    && ln -snf /usr/share/zoneinfo/$TZ /etc/localtime \
-    && echo $TZ > /etc/timezone \
-    && dpkg-reconfigure -f noninteractive tzdata \
-    # install some fonts
-    && wget "http://mirrors.ctan.org/fonts/fandol.zip" -O /usr/share/fonts/fandol.zip \
-    && unzip /usr/share/fonts/fandol.zip -d /usr/share/fonts \
-    && rm /usr/share/fonts/fandol.zip \
-    && git config --global --add safe.directory '*' \
-    && rm -rf /tmp/*
-
-
-
-# ********************************************************************************
-#
-# stage 2: final
-# ********************************************************************************
-FROM mlir_builder as final
-
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    # caffe dependency
-    libboost-python1.74.0 \
-    libboost-filesystem1.74.0 \
-    libboost-system1.74.0 \
-    libboost-regex1.74.0 \
-    libboost-thread1.74.0 \
-    libgoogle-glog0v5 \
-    libopenblas0 \
-    libprotobuf23 \
-    libgflags-dev && \
-    # clenup
-    apt-get clean && \
-    rm -rf /var/lib/apt/lists/*
-
-COPY --from=caffe_builder /root/caffe/python/caffe /usr/local/python_packages/caffe
-
-ENV LC_ALL=C.UTF-8
+# 创建工作目录
 WORKDIR /workspace
+
+# 创建虚拟环境
+RUN python3 -m venv --system-site-packages /root/venv
+
+# 激活虚拟环境
+ENV PATH="/root/venv/bin:$PATH"
+
+# 安装其他依赖项
+RUN pip install wheel
+
+# 下载并解压PyTorch源码
+RUN wget https://github.com/pytorch/pytorch/releases/download/v2.3.0/pytorch-v2.3.0.tar.gz \
+    && tar xvf pytorch-v2.3.0.tar.gz
+
+# 进入PyTorch源码目录
+WORKDIR /workspace/pytorch-v2.3.0
+
+# 更新cpuinfo
+RUN cd third_party/ \
+    && rm -rf cpuinfo/ \
+    && git clone https://github.com/sophgo/cpuinfo.git
+
+# 修改CMakeLists.txt文件
+RUN sed -i 's/if(NOT MSVC AND NOT EMSCRIPTEN AND NOT INTERN_BUILD_MOBILE)/if(FALSE)/' aten/src/ATen/CMakeLists.txt \
+    && sed -i 's/target_link_libraries(${test_name}_${CPU_CAPABILITY} c10 sleef gtest_main)/target_link_libraries(${test_name}_${CPU_CAPABILITY} c10 gtest_main)/' caffe2/CMakeLists.txt \
+    && sed -i 's/add_executable(test_api ${TORCH_API_TEST_SOURCES})/add_executable(test_api ${TORCH_API_TEST_SOURCES})\ntarget_compile_options(test_api PUBLIC -Wno-nonnull)/' test/cpp/api/CMakeLists.txt
+
+# 创建构建脚本
+RUN echo '#!/bin/bash' > build.sh \
+    && echo 'export USE_CUDA=0' >> build.sh \
+    && echo 'export USE_DISTRIBUTED=0' >> build.sh \
+    && echo 'export USE_MKLDNN=0' >> build.sh \
+    && echo 'export MAX_JOBS=5' >> build.sh \
+    && echo 'python3 setup.py bdist_wheel' >> build.sh
+
+# 使构建脚本可执行
+RUN chmod +x build.sh
+
+# 将构建脚本复制到工作目录
+COPY build.sh /workspace/pytorch-v2.3.0/build.sh
+
+# 设置工作目录为PyTorch源码目录
+WORKDIR /workspace/pytorch-v2.3.0
+
+# 手动执行构建脚本
+CMD ["bash", "build.sh"]
