@@ -7,7 +7,7 @@ ENV DEBIAN_FRONTEND=noninteractive
 # 更新系统包并安装必要的工具和依赖
 RUN apt-get update && apt-get install -y \
     build-essential \
-    cmake \
+    cmake ninja-buil \
     git \
     wget \
     python3 \
