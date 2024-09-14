@@ -53,10 +53,7 @@ RUN echo '#!/bin/bash' > build.sh \
     && echo 'python3 setup.py bdist_wheel' >> build.sh
 
 # 使构建脚本可执行
-RUN chmod +x build.sh
-
-# 将构建脚本复制到工作目录
-COPY build.sh /workspace/pytorch-v2.3.0/build.sh
+RUN chmod +x build.sh && cp build.sh /workspace/pytorch-v2.3.0/build.sh
 
 # 设置工作目录为PyTorch源码目录
 WORKDIR /workspace/pytorch-v2.3.0
