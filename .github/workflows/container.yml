@@ -169,7 +169,7 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           builder: ${{ steps.buildx.outputs.name }}
-          platforms: linux/riscv64
+          platforms: linux/amd64
           cache-from: type=gha
           cache-to: type=gha,mode=max
           file: Dockerfile
